@@ -3,16 +3,13 @@ body {
     background-color: #f0f0f0;
     text-align: center;
     margin-top: 50px;
-}
-/* Normal Styles */
-body {
-    transition: background 0.5s, color 0.5s; /* Makes the switch smooth */
+    transition: background 0.5s, color 0.5s; /* Smooth fade effect */
 }
 
-/* Dark Mode Styles */
-.dark-theme {
-    background-color: #222;
-    color: white;
+/* This rule now has "superpowers" thanks to !important */
+body.dark-theme {
+    background-color: #222 !important;
+    color: white !important;
 }
 
 button {
@@ -20,4 +17,5 @@ button {
     cursor: pointer;
     border-radius: 5px;
     border: 1px solid #333;
+    margin-top: 20px;
 }
