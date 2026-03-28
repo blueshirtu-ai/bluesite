@@ -1,21 +1,44 @@
+/* 1. Base Styles (Light Mode) */
 body {
-    font-family: Arial, sans-serif;
-    background-color: #f0f0f0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background-color: #f0f0f0; /* Light gray background */
+    color: #333333;           /* Dark gray text */
     text-align: center;
-    margin-top: 50px;
-    transition: background 0.5s, color 0.5s; /* Smooth fade effect */
+    margin-top: 100px;
+    transition: background-color 0.4s ease, color 0.4s ease; /* Smooth transition */
 }
 
-/* This rule now has "superpowers" thanks to !important */
+/* 2. Dark Mode Styles */
+/* Note: No space between 'body' and '.dark-theme' */
 body.dark-theme {
-    background-color: #222 !important;
-    color: white !important;
+    background-color: #1a1a1a !important; /* Near black */
+    color: #ffffff !important;           /* Pure white text */
 }
 
+/* 3. Button Styles */
 button {
-    padding: 10px 20px;
+    background-color: #007bff;
+    color: white;
+    padding: 12px 24px;
+    font-size: 16px;
+    border: none;
+    border-radius: 8px;
     cursor: pointer;
-    border-radius: 5px;
-    border: 1px solid #333;
-    margin-top: 20px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    transition: transform 0.2s, background-color 0.2s;
+}
+
+button:hover {
+    background-color: #0056b3;
+    transform: translateY(-2px);
+}
+
+button:active {
+    transform: translateY(0);
+}
+
+/* Optional: Change button look when in dark mode */
+body.dark-theme button {
+    background-color: #444;
+    border: 1px solid #666;
 }
