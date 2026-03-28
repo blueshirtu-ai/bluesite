@@ -4,3 +4,20 @@ body {
     text-align: center;
     margin-top: 50px;
 }
+/* Normal Styles */
+body {
+    transition: background 0.5s, color 0.5s; /* Makes the switch smooth */
+}
+
+/* Dark Mode Styles */
+.dark-theme {
+    background-color: #222;
+    color: white;
+}
+
+button {
+    padding: 10px 20px;
+    cursor: pointer;
+    border-radius: 5px;
+    border: 1px solid #333;
+}
