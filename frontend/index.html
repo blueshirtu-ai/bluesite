@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sai Tech Solutions | Intelligence</title>
+    <style>
+        /* Apple-Inspired Design Variables */
+        :root {
+            --bg: #000000;
+            --card-bg: rgba(28, 28, 30, 0.7);
+            --text-primary: #f5f5f7;
+            --text-secondary: #86868b;
+            --accent: #0071e3;
+            --accent-green: #30d158;
+            --accent-yellow: #ffd60a;
+            --accent-red: #ff453a;
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --sf-pro: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
+        }
+
+        /* Base Styles */
+        body {
+            font-family: var(--sf-pro);
+            background-color: var(--bg);
+            color: var(--text-primary);
+            margin: 0; display: flex; flex-direction: column; align-items: center;
+            overflow-x: hidden; scroll-behavior: smooth;
+        }
+
+        /* Glassmorphic Navigation Bar */
+        nav {
+            width: 100%; height: 48px; background: rgba(0,0,0,0.8);
+            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            position: fixed; top: 0; z-index: 1000;
+            display: flex; justify-content: center; align-items: center;
+            border-bottom: 1px solid var(--glass-border);
+        }
+        nav .nav-content {
+            width: 100%; max-width: 1000px;
+            display: flex; justify-content: center; align-items: center;
+            gap: 30px; position: relative;
+        }
+        nav a {
+            color: #d2d2d7; text-decoration: none; font-size: 12px; font-weight: 400;
+            transition: color 0.3s; cursor: pointer; letter-spacing: -0.01em;
+        }
+        nav a:hover { color: #fff; }
+
+        /* Region Selector */
+        .region-selector {
+            position: absolute; right: 0;
+            display: flex; align-items: center; gap: 6px; cursor: pointer;
+            padding: 5px 10px; border-radius: 20px;
+            border: 1px solid var(--glass-border);
+            background: rgba(255,255,255,0.05);
+            transition: background 0.2s;
+            font-size: 11px; color: #d2d2d7;
+            user-select: none;
+        }
+        .region-selector:hover { background: rgba(255,255,255,0.1); }
+        .region-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent-green); animation: pulse 2s infinite; }
+        .region-chevron { font-size: 8px; opacity: 0.6; }
+
+        /* Region Dropdown */
+        .region-dropdown {
+            position: absolute; top: 32px; right: 0;
+            background: rgba(28,28,30,0.98); backdrop-filter: blur(40px);
+            border: 1px solid var(--glass-border); border-radius: 14px;
+            padding: 6px; min-width: 180px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+            display: none; z-index: 2000;
+            animation: dropDown 0.2s ease;
+        }
+        .region-dropdown.open { display: block; }
+        .region-option {
+            padding: 9px 14px; border-radius: 8px; cursor: pointer;
+            font-size: 12px; color: #d2d2d7;
+            display: flex; align-items: center; gap: 10px;
+            transition: background 0.15s;
+        }
+        .region-option:hover { background: rgba(255,255,255,0.08); color: white; }
+        .region-option.active { color: white; font-weight: 500; }
+        .region-option .opt-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+        .region-option .opt-latency { margin-left: auto; font-size: 10px; color: var(--text-secondary); }
+
+        @keyframes dropDown { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Hero Section */
+        .hero { margin-top: 140px; text-align: center; max-width: 800px; animation: fadeIn 1.2s ease-out; }
+        .hero h1 {
+            font-size: 64px; font-weight: 700; margin-bottom: 12px; letter-spacing: -0.03em;
+            background: linear-gradient(135deg, #fff 0%, #a0c4ff 40%, #0071e3 70%, #5e5ce6 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            background-clip: text;
+            background-size: 200% 200%;
+            animation: gradientShift 6s ease infinite;
+        }
+        .hero p { font-size: 26px; color: var(--text-secondary); margin-bottom: 20px; font-weight: 500; }
+
+        /* Region Badge below hero */
+        .region-badge {
+            display: inline-flex; align-items: center; gap: 8px;
+            background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border);
+            border-radius: 20px; padding: 6px 16px; margin-bottom: 36px;
+            font-size: 12px; color: var(--text-secondary);
+        }
+        .region-badge .live-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent-green); animation: pulse 2s infinite; }
+
+        /* Metrics Bar */
+        #metrics-bar {
+            width: 700px; background: var(--card-bg); backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px);
+            border-radius: 22px; border: 1px solid var(--glass-border);
+            display: flex; justify-content: space-around; align-items: center;
+            padding: 18px 10px; margin-bottom: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        .stat-card { text-align: center; flex: 1; transition: transform 0.3s; cursor: default; }
+        .stat-card:hover { transform: translateY(-2px); }
+        .stat-divider { width: 1px; height: 35px; background: var(--glass-border); flex-shrink: 0; }
+        .label { display: block; font-size: 10px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; }
+        .value { display: block; font-size: 20px; font-weight: 600; color: white; margin-top: 5px; }
+        .value.green { color: var(--accent-green); }
+        .value.red { color: var(--accent-red); }
+        .value.yellow { color: var(--accent-yellow); }
+
+        /* Chat Card */
+        #chat-card {
+            width: 440px; height: 580px; background: var(--card-bg);
+            backdrop-filter: blur(40px); -webkit-backdrop-filter: blur(40px);
+            border-radius: 32px; border: 1px solid var(--glass-border);
+            display: flex; flex-direction: column; margin-bottom: 24px;
+            box-shadow: 0 30px 60px rgba(0,0,0,0.5); transition: transform 0.4s ease;
+        }
+        #chat-card:hover { transform: scale(1.005); }
+        #display { flex: 1; padding: 25px; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; scrollbar-width: none; }
+        #display::-webkit-scrollbar { display: none; }
+        .msg { padding: 14px 20px; border-radius: 20px; font-size: 15px; max-width: 80%; line-height: 1.5; animation: popIn 0.3s ease; }
+        .bot { background: rgba(255,255,255,0.08); color: var(--text-primary); align-self: flex-start; border-bottom-left-radius: 4px; }
+        .user { background: var(--accent); color: white; align-self: flex-end; border-bottom-right-radius: 4px; }
+        #input-row { padding: 22px; border-top: 1px solid var(--glass-border); display: flex; align-items: center; gap: 12px; }
+        input {
+            flex: 1; background: rgba(255,255,255,0.06); border: none; padding: 14px 22px;
+            border-radius: 24px; color: white; font-size: 15px; outline: none;
+            transition: background 0.3s;
+        }
+        input:focus { background: rgba(255,255,255,0.1); }
+        button#send-btn {
+            background: white; color: black; border: none;
+            width: 36px; height: 36px; border-radius: 50%; cursor: pointer;
+            font-size: 18px; font-weight: bold; transition: all 0.3s ease;
+            display: flex; justify-content: center; align-items: center;
+        }
+        button#send-btn:hover { background: var(--accent); color: white; transform: scale(1.1); }
+
+        /* Global Infrastructure Card */
+        #infra-card {
+            width: 440px; background: var(--card-bg);
+            backdrop-filter: blur(40px); -webkit-backdrop-filter: blur(40px);
+            border-radius: 28px; border: 1px solid var(--glass-border);
+            padding: 24px 28px; margin-bottom: 120px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+        }
+        #infra-card h3 {
+            font-size: 13px; font-weight: 600; color: var(--text-secondary);
+            text-transform: uppercase; letter-spacing: 0.08em; margin: 0 0 20px 0;
+        }
+        .region-row {
+            display: flex; align-items: center; gap: 12px;
+            padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.05);
+            transition: background 0.2s; border-radius: 8px; cursor: default;
+        }
+        .region-row:last-child { border-bottom: none; }
+        .region-row:hover { background: rgba(255,255,255,0.03); }
+        .region-flag { font-size: 18px; width: 24px; text-align: center; }
+        .region-info { flex: 1; }
+        .region-name { font-size: 14px; font-weight: 500; color: var(--text-primary); }
+        .region-id { font-size: 11px; color: var(--text-secondary); margin-top: 1px; }
+        .region-status-dot {
+            width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+            background: var(--accent-green);
+        }
+        .region-status-dot.active-region { box-shadow: 0 0 0 3px rgba(48, 209, 88, 0.25); }
+        .region-latency { font-size: 12px; color: var(--text-secondary); min-width: 48px; text-align: right; }
+        .region-latency.fast { color: var(--accent-green); }
+        .region-latency.medium { color: var(--accent-yellow); }
+        .region-latency.slow { color: var(--accent-red); }
+        .active-tag {
+            font-size: 10px; background: rgba(0,113,227,0.25); color: var(--accent);
+            border: 1px solid rgba(0,113,227,0.4); border-radius: 8px;
+            padding: 2px 8px; font-weight: 600; letter-spacing: 0.03em;
+        }
+
+        /* Footer */
+        footer { margin-bottom: 60px; text-align: center; color: #424245; font-size: 12px; }
+        .footer-links { display: flex; gap: 30px; margin-top: 10px; justify-content: center; }
+        .footer-links a { color: #424245; text-decoration: none; transition: color 0.3s; }
+        .footer-links a:hover { color: #f5f5f7; text-decoration: underline; }
+
+        /* Animations */
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes popIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(0.85); }
+        }
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Responsive */
+        @media (max-width: 750px) {
+            #metrics-bar { width: 92vw; flex-wrap: wrap; gap: 12px; }
+            #chat-card, #infra-card { width: 92vw; }
+            .hero h1 { font-size: 42px; }
+            .region-selector { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Top Nav -->
+    <nav>
+        <div class="nav-content">
+            <a onclick="alert('Store - Coming Soon')">Store</a>
+            <a onclick="alert('Mac - Enterprise Grade')">Mac</a>
+            <a onclick="alert('BFF Services Active')">Services</a>
+            <a onclick="alert('Database Support')">Support</a>
+
+            <!-- Region Selector -->
+            <div class="region-selector" onclick="toggleRegionDropdown()" id="region-selector">
+                <div class="region-dot"></div>
+                <span id="nav-region-label">US East</span>
+                <span class="region-chevron">▾</span>
+                <div class="region-dropdown" id="region-dropdown"></div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Header -->
+    <div class="hero">
+        <h1>Sai Tech Intelligence.</h1>
+        <p>Your data, clarified by AI.</p>
+        <div class="region-badge">
+            <div class="live-dot"></div>
+            <span id="hero-region-badge">Connected · US East (us-east-1)</span>
+        </div>
+    </div>
+
+    <!-- Live Metrics Bar -->
+    <div id="metrics-bar">
+        <div class="stat-card">
+            <span class="label">Clients</span>
+            <span class="value" id="stat-clients">—</span>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-card">
+            <span class="label">Active Projects</span>
+            <span class="value" id="stat-projects">—</span>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-card">
+            <span class="label">Unpaid Balance</span>
+            <span class="value yellow" id="stat-revenue">—</span>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-card">
+            <span class="label">Revenue Collected</span>
+            <span class="value green" id="stat-collected">—</span>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-card">
+            <span class="label">Overdue</span>
+            <span class="value red" id="stat-overdue">—</span>
+        </div>
+    </div>
+
+    <!-- Main Chat Assistant -->
+    <div id="chat-card">
+        <div id="display">
+            <div class="msg bot">Hello. I am the Sai Tech Assistant.<br><br>Try: <b>show clients</b>, <b>show projects</b>, <b>show invoices</b>, <b>status</b>, or <b>help</b>.</div>
+        </div>
+        <div id="input-row">
+            <input type="text" id="userQuery" placeholder="Ask about clients, projects..." onkeypress="handleKey(event)">
+            <button id="send-btn" onclick="askBFF()">↑</button>
+        </div>
+    </div>
+
+    <!-- Global Infrastructure Card -->
+    <div id="infra-card">
+        <h3>Global Infrastructure</h3>
+        <div id="region-rows">
+            <!-- Populated by JS -->
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-links">
+            <a href="#" onclick="alert('Privacy Policy')">Privacy Policy</a>
+            <a href="#" onclick="alert('Terms of Use')">Terms of Use</a>
+            <a href="#" onclick="alert('Site Map')">Site Map</a>
+        </div>
+        <p style="margin-top: 20px;">Copyright &copy; 2026 Sai Tech Solutions LLC. All rights reserved.</p>
+    </footer>
+
+    <script>
+        // ── Region Configuration ─────────────────────────────────────────
+        const REGION_CONFIGS = {
+            'us-east-1': { label: 'US East',  id: 'us-east-1',  flag: '🇺🇸', base: 'http://localhost:3000' },
+            'us-west-2': { label: 'US West',  id: 'us-west-2',  flag: '🇺🇸', base: 'http://us-west.saitech.io' },
+            'eu-west-1': { label: 'EU West',  id: 'eu-west-1',  flag: '🇪🇺', base: 'http://eu.saitech.io' },
+            'ap-south-1': { label: 'AP South', id: 'ap-south-1', flag: '🇮🇳', base: 'http://ap.saitech.io' },
+        };
+
+        let activeRegion = localStorage.getItem('saitech_region') || 'us-east-1';
+        let BFF_BASE = REGION_CONFIGS[activeRegion].base;
+
+        // ── Region UI ────────────────────────────────────────────────────
+        function buildRegionDropdown(latencyMap = {}) {
+            const dropdown = document.getElementById('region-dropdown');
+            dropdown.innerHTML = REGION_CONFIGS
+                ? Object.values(REGION_CONFIGS).map(r => {
+                    const latency = latencyMap[r.id];
+                    const latencyStr = latency != null ? `${latency}ms` : '';
+                    const isActive = r.id === activeRegion;
+                    const dotColor = latency == null ? '#555' : latency < 60 ? '#30d158' : latency < 120 ? '#ffd60a' : '#ff453a';
+                    return `<div class="region-option ${isActive ? 'active' : ''}" onclick="setRegion('${r.id}')">
+                        <span class="opt-dot" style="background:${dotColor}"></span>
+                        <span>${r.flag} ${r.label}</span>
+                        ${isActive ? '<span class="active-tag">Active</span>' : ''}
+                        <span class="opt-latency">${latencyStr}</span>
+                    </div>`;
+                }).join('')
+                : '';
+        }
+
+        function buildInfraCard(regionStatuses) {
+            const container = document.getElementById('region-rows');
+            container.innerHTML = regionStatuses.map(r => {
+                const isActive = r.region === activeRegion;
+                const latencyClass = r.latency < 60 ? 'fast' : r.latency < 120 ? 'medium' : 'slow';
+                return `<div class="region-row">
+                    <span class="region-flag">${r.flag}</span>
+                    <div class="region-info">
+                        <div class="region-name">${r.label}</div>
+                        <div class="region-id">${r.region}</div>
+                    </div>
+                    ${isActive ? '<span class="active-tag">Active</span>' : ''}
+                    <div class="region-status-dot ${isActive ? 'active-region' : ''}"></div>
+                    <div class="region-latency ${latencyClass}">${r.latency}ms</div>
+                </div>`;
+            }).join('');
+        }
+
+        function toggleRegionDropdown() {
+            const dd = document.getElementById('region-dropdown');
+            dd.classList.toggle('open');
+        }
+
+        document.addEventListener('click', (e) => {
+            if (!document.getElementById('region-selector').contains(e.target)) {
+                document.getElementById('region-dropdown').classList.remove('open');
+            }
+        });
+
+        function setRegion(regionId) {
+            activeRegion = regionId;
+            BFF_BASE = REGION_CONFIGS[regionId].base;
+            localStorage.setItem('saitech_region', regionId);
+            const cfg = REGION_CONFIGS[regionId];
+            document.getElementById('nav-region-label').textContent = cfg.label;
+            document.getElementById('hero-region-badge').textContent = `Connected · ${cfg.label} (${cfg.id})`;
+            document.getElementById('region-dropdown').classList.remove('open');
+            loadStats();
+            loadRegionStatus();
+            appendBotMsg(`Switched to <b>${cfg.flag} ${cfg.label}</b>. Refreshing data from ${cfg.id}...`);
+        }
+
+        // ── Load Stats ───────────────────────────────────────────────────
+        async function loadStats() {
+            try {
+                const response = await fetch(`${BFF_BASE}/api/stats`);
+                if (response.ok) {
+                    const data = await response.json();
+                    document.getElementById('stat-clients').innerText = data.clients || '—';
+                    document.getElementById('stat-projects').innerText = data.activeProjects || '—';
+                    document.getElementById('stat-revenue').innerText = data.pendingRevenue
+                        ? `$${Number(data.pendingRevenue / 1000).toFixed(0)}k` : '—';
+                    document.getElementById('stat-collected').innerText = data.paidRevenue
+                        ? `$${Number(data.paidRevenue / 1000).toFixed(0)}k` : '—';
+                    document.getElementById('stat-overdue').innerText = data.overdueCount || '0';
+                }
+            } catch (err) {
+                console.log("Using static data: BFF server is offline.");
+                document.getElementById('stat-clients').innerText = '10';
+                document.getElementById('stat-projects').innerText = '12';
+                document.getElementById('stat-revenue').innerText = '$42k';
+                document.getElementById('stat-collected').innerText = '$88k';
+                document.getElementById('stat-overdue').innerText = '3';
+            }
+        }
+
+        // ── Load Region Status ───────────────────────────────────────────
+        async function loadRegionStatus() {
+            // Default/fallback region data
+            const fallback = [
+                { region: 'us-east-1',  label: 'US East',  flag: '🇺🇸', latency: 12,  status: 'online' },
+                { region: 'us-west-2',  label: 'US West',  flag: '🇺🇸', latency: 47,  status: 'online' },
+                { region: 'eu-west-1',  label: 'EU West',  flag: '🇪🇺', latency: 91,  status: 'online' },
+                { region: 'ap-south-1', label: 'AP South', flag: '🇮🇳', latency: 138, status: 'online' },
+            ];
+            try {
+                const res = await fetch(`${BFF_BASE}/api/region-status`);
+                if (res.ok) {
+                    const data = await res.json();
+                    const latencyMap = {};
+                    data.forEach(r => latencyMap[r.region] = r.latency);
+                    buildRegionDropdown(latencyMap);
+                    buildInfraCard(data);
+                    return;
+                }
+            } catch (_) {}
+            const latencyMap = {};
+            fallback.forEach(r => latencyMap[r.region] = r.latency);
+            buildRegionDropdown(latencyMap);
+            buildInfraCard(fallback);
+        }
+
+        // ── Chat Helpers ─────────────────────────────────────────────────
+        function appendBotMsg(html) {
+            const display = document.getElementById('display');
+            const div = document.createElement('div');
+            div.className = 'msg bot';
+            div.innerHTML = html;
+            display.appendChild(div);
+            display.scrollTop = display.scrollHeight;
+        }
+
+        function handleKey(e) { if (e.key === 'Enter') askBFF(); }
+
+        // ── Main Chat Logic ──────────────────────────────────────────────
+        async function askBFF() {
+            const input = document.getElementById('userQuery');
+            const display = document.getElementById('display');
+            const query = input.value.trim();
+            if (!query) return;
+
+            const userDiv = document.createElement('div');
+            userDiv.className = 'msg user';
+            userDiv.textContent = query;
+            display.appendChild(userDiv);
+            input.value = '';
+            display.scrollTop = display.scrollHeight;
+
+            const q = query.toLowerCase();
+
+            // Help
+            if (q === 'help') {
+                appendBotMsg(`<b>Available commands:</b><br>
+                    • <b>show clients</b> — list all clients<br>
+                    • <b>show projects</b> — list active projects<br>
+                    • <b>show invoices</b> — recent invoices<br>
+                    • <b>status</b> — check BFF health<br>
+                    • <b>region</b> — show active region`);
+                return;
+            }
+
+            // Region info
+            if (q === 'region' || q.includes('which region') || q.includes('active region')) {
+                const cfg = REGION_CONFIGS[activeRegion];
+                appendBotMsg(`Active region: <b>${cfg.flag} ${cfg.label}</b> (${cfg.id})<br>Endpoint: <code>${cfg.base}</code>`);
+                return;
+            }
+
+            // Status
+            if (q === 'status' || q.includes('bff status') || q.includes('server status')) {
+                try {
+                    const res = await fetch(`${BFF_BASE}/api/health`);
+                    const data = await res.json();
+                    appendBotMsg(`BFF Status: <b style="color:#30d158">${data.status}</b><br>Database: <b style="color:#30d158">${data.database}</b><br>Region: ${REGION_CONFIGS[activeRegion].label}`);
+                } catch {
+                    appendBotMsg(`BFF is <b style="color:#ff453a">offline</b> in ${REGION_CONFIGS[activeRegion].label}. Ensure the server is running.`);
+                }
+                return;
+            }
+
+            // Clients
+            if (q.includes('show clients') || q.includes('list clients')) {
+                try {
+                    const res = await fetch(`${BFF_BASE}/api/clients`);
+                    const clients = await res.json();
+                    const list = clients.map(c => `&bull; ${c.client_name}`).join('<br>');
+                    appendBotMsg(`Retrieved <b>${clients.length} clients</b> from ${REGION_CONFIGS[activeRegion].label}:<br><br>${list}`);
+                } catch {
+                    appendBotMsg(`Unable to reach the database in <b>${REGION_CONFIGS[activeRegion].label}</b>. Ensure your BFF server is running.`);
+                }
+                return;
+            }
+
+            // Projects
+            if (q.includes('show projects') || q.includes('list projects')) {
+                try {
+                    const res = await fetch(`${BFF_BASE}/api/projects`);
+                    const projects = await res.json();
+                    const list = projects.map(p => `&bull; ${p.project_name} <span style="color:var(--text-secondary);font-size:13px">(${p.status})</span>`).join('<br>');
+                    appendBotMsg(`Retrieved <b>${projects.length} projects</b>:<br><br>${list}`);
+                } catch {
+                    appendBotMsg(`Unable to retrieve projects. Ensure your BFF server is running.`);
+                }
+                return;
+            }
+
+            // Invoices
+            if (q.includes('show invoices') || q.includes('list invoices')) {
+                try {
+                    const res = await fetch(`${BFF_BASE}/api/invoices`);
+                    const invoices = await res.json();
+                    const list = invoices.map(i => {
+                        const color = i.payment_status === 'Paid' ? '#30d158' : i.payment_status === 'Overdue' ? '#ff453a' : '#ffd60a';
+                        return `&bull; $${Number(i.billed_amount).toLocaleString()} — <span style="color:${color}">${i.payment_status}</span>`;
+                    }).join('<br>');
+                    appendBotMsg(`Last <b>${invoices.length} invoices</b>:<br><br>${list}`);
+                } catch {
+                    appendBotMsg(`Unable to retrieve invoices. Ensure your BFF server is running.`);
+                }
+                return;
+            }
+
+            // Fallback
+            appendBotMsg(`I didn't understand that. Type <b>help</b> to see available commands.`);
+        }
+
+        // ── Initialize ───────────────────────────────────────────────────
+        window.onload = () => {
+            const cfg = REGION_CONFIGS[activeRegion];
+            document.getElementById('nav-region-label').textContent = cfg.label;
+            document.getElementById('hero-region-badge').textContent = `Connected · ${cfg.label} (${cfg.id})`;
+            loadStats();
+            loadRegionStatus();
+        };
+    </script>
+</body>
+</html>
