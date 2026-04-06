@@ -370,16 +370,27 @@
       new Date().toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric' });
     try {
       const res = await fetch(`${BFF}/api/student/list`);
-      if (!res.ok) throw new Error();
+      if (!res.ok) throw new Error('server error');
       const students = await res.json();
       const sel = document.getElementById('name-select');
-      students.forEach(s => {
-        const opt = document.createElement('option');
-        opt.value = s.id; opt.textContent = s.name;
-        sel.appendChild(opt);
-      });
+      const err = document.getElementById('login-err');
+
+      if (!students.length) {
+        sel.innerHTML = '<option value="">No students added yet</option>';
+        sel.disabled = true;
+        err.style.color = 'var(--yellow)';
+        err.textContent = '⚠️ No students yet. Ask your teacher to add you at teacher.html first!';
+        document.querySelector('.big-btn.primary').disabled = true;
+        document.querySelector('.big-btn.primary').style.opacity = '.4';
+      } else {
+        students.forEach(s => {
+          const opt = document.createElement('option');
+          opt.value = s.id; opt.textContent = s.name;
+          sel.appendChild(opt);
+        });
+      }
     } catch {
-      // Server offline — will show error on login attempt
+      document.getElementById('login-err').textContent = '⚠️ Cannot reach server. Is the BFF running?';
     }
 
     // PIN auto-advance
