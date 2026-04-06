@@ -138,6 +138,17 @@
     }
     .answer-btn:active { transform: scale(.96); }
     .answer-btn:hover { background: rgba(255,255,255,.12); border-color: rgba(255,255,255,.25); }
+    .answer-btn.clock-opt {
+      display: flex; flex-direction: column; align-items: center; gap: 6px;
+      padding: 10px 6px;
+    }
+    .clock-opt-label { font-size: 13px; color: var(--muted); font-weight: 700; }
+    .digital-display {
+      font-size: 56px; font-weight: 800; letter-spacing: .04em;
+      background: rgba(0,113,227,.12); border: 2px solid rgba(0,113,227,.3);
+      border-radius: 18px; padding: 12px 32px; color: #5ac8fa;
+      font-variant-numeric: tabular-nums;
+    }
 
     /* ── FEEDBACK SCREEN ── */
     #s-feedback { justify-content: center; min-height: 100vh; padding-top: 0; }
@@ -494,7 +505,23 @@
 
     // Visual aid
     const aid = document.getElementById('visual-aid');
-    const vd = q.visual_data;
+    const vd = q.visual_data ? (typeof q.visual_data === 'string' ? JSON.parse(q.visual_data) : q.visual_data) : null;
+    const options = Array.isArray(q.options) ? q.options : JSON.parse(q.options);
+
+    if (q.question_type === 'clock_match' && vd?.clock_options) {
+      // Show digital time as visual, mini clocks as answer buttons
+      aid.innerHTML = `<div class="digital-display">${vd.display_time}</div>`;
+      aid.style.display = 'flex';
+      document.getElementById('q-text').textContent = q.question_text;
+      document.getElementById('answer-grid').innerHTML = vd.clock_options.map((c, i) =>
+        `<button class="answer-btn clock-opt" onclick="submitAnswer(this,'${escHtml(options[i])}')">
+          ${renderClock(c.h, c.m, 110)}
+          <span class="clock-opt-label">${escHtml(options[i])}</span>
+        </button>`
+      ).join('');
+      return;
+    }
+
     if (q.question_type === 'clock' && vd) {
       aid.innerHTML = renderClock(vd.hours, vd.minutes);
       aid.style.display = 'flex';
@@ -512,7 +539,6 @@
     document.getElementById('q-text').textContent = q.question_text;
 
     // Answer buttons
-    const options = Array.isArray(q.options) ? q.options : JSON.parse(q.options);
     document.getElementById('answer-grid').innerHTML = options.map(opt =>
       `<button class="answer-btn" onclick="submitAnswer(this,'${escHtml(opt)}')">${escHtml(opt)}</button>`
     ).join('');
@@ -632,34 +658,38 @@
     showScreen('s-summary');
   }
 
-  // ── VISUAL: Analog Clock ──
-  function renderClock(h, m) {
-    const S2=220, cx=110, cy=110, R=100;
+  // ── VISUAL: Analog Clock (size-aware) ──
+  function renderClock(h, m, sz=220) {
+    const cx=sz/2, cy=sz/2, R=sz/2-sz*0.045;
     const rad = d => d * Math.PI / 180;
+    const mini = sz < 150;
     let ticks = '';
     for (let i=0; i<60; i++) {
       const a = rad(i*6-90), big = i%5===0;
-      const r1 = R-(big?14:7), r2 = R-1;
+      const r1 = R-(big ? R*0.14 : R*0.07), r2 = R-1;
       ticks += `<line x1="${(cx+Math.cos(a)*r1).toFixed(1)}" y1="${(cy+Math.sin(a)*r1).toFixed(1)}"
         x2="${(cx+Math.cos(a)*r2).toFixed(1)}" y2="${(cy+Math.sin(a)*r2).toFixed(1)}"
-        stroke="${big?'#ccc':'#444'}" stroke-width="${big?2.5:1}" stroke-linecap="round"/>`;
+        stroke="${big?'#ccc':'#444'}" stroke-width="${big?(mini?1.5:2.5):1}" stroke-linecap="round"/>`;
     }
+    const fs = mini ? 9 : 14;
     let nums = [12,1,2,3,4,5,6,7,8,9,10,11].map((n,i) => {
-      const a = rad(i*30-90);
-      return `<text x="${(cx+Math.cos(a)*(R-26)).toFixed(1)}" y="${(cy+Math.sin(a)*(R-26)+5).toFixed(1)}"
-        text-anchor="middle" fill="#f5f5f7" font-size="14" font-weight="600" font-family="system-ui">${n}</text>`;
+      const a = rad(i*30-90), nr = R-(mini?R*0.28:R*0.26);
+      return `<text x="${(cx+Math.cos(a)*nr).toFixed(1)}" y="${(cy+Math.sin(a)*nr+fs*0.35).toFixed(1)}"
+        text-anchor="middle" fill="#f5f5f7" font-size="${fs}" font-weight="600" font-family="system-ui">${n}</text>`;
     }).join('');
     const hA = rad((h%12 + m/60)*30-90);
     const mA = rad(m*6-90);
-    const hx=(cx+Math.cos(hA)*58).toFixed(1), hy=(cy+Math.sin(hA)*58).toFixed(1);
-    const mx=(cx+Math.cos(mA)*78).toFixed(1), my=(cy+Math.sin(mA)*78).toFixed(1);
-    return `<svg width="${S2}" height="${S2}" viewBox="0 0 ${S2} ${S2}">
-      <circle cx="${cx}" cy="${cy}" r="${R}" fill="#1c1c1e" stroke="#3a3a3c" stroke-width="3"/>
+    const hLen=R*0.58, mLen=R*0.78;
+    const hx=(cx+Math.cos(hA)*hLen).toFixed(1), hy=(cy+Math.sin(hA)*hLen).toFixed(1);
+    const mx=(cx+Math.cos(mA)*mLen).toFixed(1), my=(cy+Math.sin(mA)*mLen).toFixed(1);
+    const hw=mini?4:7, mw=mini?2.5:4, cr=mini?4:7;
+    return `<svg width="${sz}" height="${sz}" viewBox="0 0 ${sz} ${sz}">
+      <circle cx="${cx}" cy="${cy}" r="${R}" fill="#1c1c1e" stroke="#3a3a3c" stroke-width="${mini?2:3}"/>
       ${ticks}${nums}
-      <line x1="${cx}" y1="${cy}" x2="${hx}" y2="${hy}" stroke="#f5f5f7" stroke-width="7" stroke-linecap="round"/>
-      <line x1="${cx}" y1="${cy}" x2="${mx}" y2="${my}" stroke="#0071e3" stroke-width="4" stroke-linecap="round"/>
-      <circle cx="${cx}" cy="${cy}" r="7" fill="#0071e3"/>
-      <circle cx="${cx}" cy="${cy}" r="3" fill="white"/>
+      <line x1="${cx}" y1="${cy}" x2="${hx}" y2="${hy}" stroke="#f5f5f7" stroke-width="${hw}" stroke-linecap="round"/>
+      <line x1="${cx}" y1="${cy}" x2="${mx}" y2="${my}" stroke="#0071e3" stroke-width="${mw}" stroke-linecap="round"/>
+      <circle cx="${cx}" cy="${cy}" r="${cr}" fill="#0071e3"/>
+      <circle cx="${cx}" cy="${cy}" r="${mini?2:3}" fill="white"/>
     </svg>`;
   }
 

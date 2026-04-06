@@ -58,8 +58,9 @@ app.get('/api/clients', async (_req, res) => {
   }
 });
 
-app.listen(port, () => {
+app.listen(port, '0.0.0.0', () => {
   console.log(`🚀 Sai Tech BFF running at http://localhost:${port}`);
+  console.log(`📱 On same WiFi, open: http://192.168.1.2:${port}/student.html`);
 });
 // Summary Statistics (enhanced with paidRevenue + overdueCount)
 app.get('/api/stats', async (_req, res) => {
@@ -139,6 +140,15 @@ async function initStudentDB() {
   )`);
   const { rows } = await pool.query('SELECT COUNT(*) FROM questions');
   if (parseInt(rows[0].count) === 0) await seedQuestions();
+
+  // Expand time questions if below target (handles first run or upgrades)
+  const timeRows = await pool.query("SELECT COUNT(*) FROM questions WHERE topic='time'");
+  if (parseInt(timeRows.rows[0].count) < 50) {
+    await pool.query('DELETE FROM session_answers WHERE question_id IN (SELECT id FROM questions WHERE topic=$1)', ['time']);
+    await pool.query("DELETE FROM questions WHERE topic='time'");
+    await seedTimeQuestions();
+  }
+
   console.log('✅ Student DB initialized');
 }
 
@@ -179,6 +189,85 @@ async function seedQuestions() {
     );
   }
   console.log('✅ 24 questions seeded');
+}
+
+async function seedTimeQuestions() {
+  const qs = [
+    // ── Whole Hours ──
+    ['clock','What time does the clock show?',{hours:1,minutes:0}, ['1:00','2:00','1:30','12:00'],'1:00'],
+    ['clock','What time does the clock show?',{hours:5,minutes:0}, ['5:00','6:00','5:30','4:00'],'5:00'],
+    ['clock','What time does the clock show?',{hours:8,minutes:0}, ['7:00','8:00','8:30','9:00'],'8:00'],
+    ['clock','What time does the clock show?',{hours:10,minutes:0},['10:00','11:00','9:00','10:30'],'10:00'],
+    ['clock','What time does the clock show?',{hours:11,minutes:0},['10:00','11:30','11:00','12:00'],'11:00'],
+    ['clock','What time does the clock show?',{hours:6,minutes:0}, ['5:30','6:00','6:30','7:00'],'6:00'],
+    ['clock','What time does the clock show?',{hours:3,minutes:0}, ['2:30','3:00','3:30','4:00'],'3:00'],
+    ['clock','What time does the clock show?',{hours:9,minutes:0}, ['9:00','3:00','9:15','8:00'],'9:00'],
+    ['clock','What time does the clock show?',{hours:12,minutes:0},['12:00','12:30','6:00','11:00'],'12:00'],
+    // ── Half Hours ──
+    ['clock','What time does the clock show?',{hours:1,minutes:30}, ['1:00','1:30','2:00','2:30'],'1:30'],
+    ['clock','What time does the clock show?',{hours:3,minutes:30}, ['3:00','3:30','4:00','4:30'],'3:30'],
+    ['clock','What time does the clock show?',{hours:5,minutes:30}, ['5:00','5:30','6:00','6:30'],'5:30'],
+    ['clock','What time does the clock show?',{hours:6,minutes:30}, ['6:00','6:30','7:00','5:30'],'6:30'],
+    ['clock','What time does the clock show?',{hours:8,minutes:30}, ['8:00','8:30','9:00','9:30'],'8:30'],
+    ['clock','What time does the clock show?',{hours:10,minutes:30},['10:00','10:30','11:00','11:30'],'10:30'],
+    ['clock','What time does the clock show?',{hours:11,minutes:30},['11:00','11:30','12:00','12:30'],'11:30'],
+    // ── Quarter Hours ──
+    ['clock','What time does the clock show?',{hours:1,minutes:15}, ['1:00','1:15','1:30','2:15'],'1:15'],
+    ['clock','What time does the clock show?',{hours:2,minutes:15}, ['2:00','2:15','2:30','2:45'],'2:15'],
+    ['clock','What time does the clock show?',{hours:4,minutes:15}, ['4:00','4:15','4:30','5:15'],'4:15'],
+    ['clock','What time does the clock show?',{hours:7,minutes:15}, ['6:45','7:00','7:15','7:30'],'7:15'],
+    ['clock','What time does the clock show?',{hours:10,minutes:15},['9:45','10:00','10:15','10:30'],'10:15'],
+    ['clock','What time does the clock show?',{hours:2,minutes:45}, ['2:15','2:30','2:45','3:00'],'2:45'],
+    ['clock','What time does the clock show?',{hours:3,minutes:45}, ['3:15','3:30','3:45','4:00'],'3:45'],
+    ['clock','What time does the clock show?',{hours:4,minutes:30}, ['4:30','5:00','4:15','3:30'],'4:30'],
+    ['clock','What time does the clock show?',{hours:6,minutes:45}, ['6:15','6:30','6:45','7:00'],'6:45'],
+    ['clock','What time does the clock show?',{hours:8,minutes:45}, ['8:15','8:30','8:45','9:00'],'8:45'],
+    ['clock','What time does the clock show?',{hours:5,minutes:45}, ['5:15','5:30','5:45','6:00'],'5:45'],
+    // ── 5-Minute Intervals ──
+    ['clock','What time does the clock show?',{hours:1,minutes:5},  ['1:00','1:05','1:10','1:15'],'1:05'],
+    ['clock','What time does the clock show?',{hours:2,minutes:10}, ['2:00','2:05','2:10','2:15'],'2:10'],
+    ['clock','What time does the clock show?',{hours:3,minutes:20}, ['3:15','3:20','3:25','3:30'],'3:20'],
+    ['clock','What time does the clock show?',{hours:4,minutes:25}, ['4:20','4:25','4:30','4:35'],'4:25'],
+    ['clock','What time does the clock show?',{hours:5,minutes:35}, ['5:30','5:35','5:40','5:45'],'5:35'],
+    ['clock','What time does the clock show?',{hours:6,minutes:40}, ['6:35','6:40','6:45','6:50'],'6:40'],
+    ['clock','What time does the clock show?',{hours:7,minutes:50}, ['7:45','7:50','7:55','8:00'],'7:50'],
+    ['clock','What time does the clock show?',{hours:7,minutes:0},  ['7:30','7:00','6:30','8:00'],'7:00'],
+    ['clock','What time does the clock show?',{hours:8,minutes:55}, ['8:50','8:55','9:00','9:05'],'8:55'],
+    // ── Match the Time (clock_match) ──
+    ['clock_match','Which clock shows 3:30?', {display_time:'3:30', clock_options:[{h:3,m:30},{h:3,m:0},{h:6,m:15},{h:4,m:30}]},['3:30','3:00','6:15','4:30'],'3:30'],
+    ['clock_match','Which clock shows 9:15?', {display_time:'9:15', clock_options:[{h:9,m:0},{h:9,m:15},{h:9,m:30},{h:3,m:15}]},['9:00','9:15','9:30','3:15'],'9:15'],
+    ['clock_match','Which clock shows 6:00?', {display_time:'6:00', clock_options:[{h:6,m:0},{h:6,m:30},{h:12,m:0},{h:3,m:0}]},['6:00','6:30','12:00','3:00'],'6:00'],
+    ['clock_match','Which clock shows 1:45?', {display_time:'1:45', clock_options:[{h:1,m:15},{h:1,m:30},{h:1,m:45},{h:2,m:15}]},['1:15','1:30','1:45','2:15'],'1:45'],
+    ['clock_match','Which clock shows 11:30?',{display_time:'11:30',clock_options:[{h:11,m:0},{h:11,m:30},{h:12,m:30},{h:10,m:30}]},['11:00','11:30','12:30','10:30'],'11:30'],
+    ['clock_match','Which clock shows 4:20?', {display_time:'4:20', clock_options:[{h:4,m:10},{h:4,m:20},{h:4,m:25},{h:5,m:20}]},['4:10','4:20','4:25','5:20'],'4:20'],
+    // ── AM / PM ──
+    ['multiple_choice','You eat breakfast at 7:30. Is it AM or PM?',                   null,['AM','PM'],'AM'],
+    ['multiple_choice','You go to bed at 9:00 at night. Is it AM or PM?',              null,['AM','PM'],'PM'],
+    ['multiple_choice','School starts at 8:15 in the morning. Is it AM or PM?',        null,['AM','PM'],'AM'],
+    ['multiple_choice','You eat dinner at 6:00 in the evening. Is it AM or PM?',       null,['AM','PM'],'PM'],
+    ['multiple_choice','You wake up at 7:00 in the morning. Is it AM or PM?',          null,['AM','PM'],'AM'],
+    ['multiple_choice','Soccer practice ends at 5:30 in the afternoon. Is it AM or PM?',null,['AM','PM'],'PM'],
+    // ── Elapsed Time ──
+    ['multiple_choice','School starts at 8:00 AM and lunch is at 12:00 PM. How many hours is that?',null,['2 hours','3 hours','4 hours','5 hours'],'4 hours'],
+    ['multiple_choice','It is 2:00 PM. Soccer practice is in 2 hours. What time does it start?',   null,['3:00 PM','4:00 PM','5:00 PM','6:00 PM'],'4:00 PM'],
+    ['multiple_choice','You start reading at 1:00 PM and stop at 1:30 PM. How long did you read?', null,['15 minutes','30 minutes','45 minutes','1 hour'],'30 minutes'],
+    ['multiple_choice','The movie starts at 3:00 PM and is 2 hours long. What time does it end?',  null,['4:00 PM','5:00 PM','6:00 PM','7:00 PM'],'5:00 PM'],
+    ['multiple_choice','It is 9:00 AM. Recess is in 1 hour and 30 minutes. What time is recess?',  null,['9:30 AM','10:00 AM','10:30 AM','11:00 AM'],'10:30 AM'],
+    ['multiple_choice','Dinner starts at 6:00 PM and takes 30 minutes. What time does it end?',    null,['6:15 PM','6:30 PM','6:45 PM','7:00 PM'],'6:30 PM'],
+    // ── Word Problems ──
+    ["multiple_choice","Jenny's dance class starts at 4:00 PM and lasts 1 hour. What time does it end?",null,['4:30 PM','5:00 PM','5:30 PM','6:00 PM'],'5:00 PM'],
+    ['multiple_choice','It is 10:00 AM. Lunch is in 2 hours. What time is lunch?',                null,['11:00 AM','12:00 PM','1:00 PM','2:00 PM'],'12:00 PM'],
+    ['multiple_choice','Tom goes to the park at 3:30 PM and plays for 1 hour. What time does he go home?',null,['4:00 PM','4:30 PM','5:00 PM','5:30 PM'],'4:30 PM'],
+    ['multiple_choice','A TV show starts at 7:00 PM and is 30 minutes long. What time does it end?',null,['7:15 PM','7:30 PM','7:45 PM','8:00 PM'],'7:30 PM'],
+    ['multiple_choice','Math class starts at 9:00 AM and lasts 45 minutes. What time does it end?',null,['9:30 AM','9:45 AM','10:00 AM','10:15 AM'],'9:45 AM'],
+  ];
+  for (const [type, text, visual, options, answer] of qs) {
+    await pool.query(
+      'INSERT INTO questions (topic, question_type, question_text, visual_data, options, correct_answer) VALUES ($1,$2,$3,$4,$5,$6)',
+      ['time', type, text, JSON.stringify(visual), JSON.stringify(options), answer]
+    );
+  }
+  console.log(`✅ ${qs.length} time questions seeded`);
 }
 
 initStudentDB().catch(err => console.error('❌ Student DB init error:', err));
