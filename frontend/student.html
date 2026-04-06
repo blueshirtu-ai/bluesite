@@ -59,11 +59,11 @@
     }
     select:focus, input:focus { background: rgba(255,255,255,.11); }
     select option { background: #1c1c1e; }
-    .pin-row { display: flex; gap: 12px; }
+    .pin-row { display: flex; gap: 10px; justify-content: center; }
     .pin-box {
-      flex: 1; background: rgba(255,255,255,.07); border: 1px solid var(--border);
-      border-radius: 16px; height: 64px; text-align: center; color: var(--text);
-      font-size: 28px; font-weight: 700; font-family: var(--sf); outline: none;
+      width: 60px; height: 60px; background: rgba(255,255,255,.07); border: 1px solid var(--border);
+      border-radius: 14px; text-align: center; color: var(--text);
+      font-size: 26px; font-weight: 700; font-family: var(--sf); outline: none;
       transition: background .2s, border-color .2s;
     }
     .pin-box:focus { background: rgba(255,255,255,.11); border-color: var(--blue); }
