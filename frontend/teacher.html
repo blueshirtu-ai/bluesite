@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Teacher Dashboard | Sai Tech Learning</title>
+  <style>
+    :root {
+      --bg: #000; --card: rgba(28,28,30,.85); --border: rgba(255,255,255,.12);
+      --text: #f5f5f7; --muted: #86868b; --blue: #0071e3; --green: #30d158;
+      --yellow: #ffd60a; --red: #ff453a; --orange: #ff9f0a;
+      --sf: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: var(--sf); background: var(--bg); color: var(--text);
+      min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+    }
+
+    .screen { display: none; width: 100%; max-width: 900px; padding: 40px 24px; animation: fadeUp .3s ease; }
+    .screen.active { display: block; }
+    @keyframes fadeUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+
+    /* ── Shared ── */
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 24px; padding: 28px; }
+    .btn {
+      padding: 12px 22px; border: none; border-radius: 14px; font-size: 15px;
+      font-weight: 600; cursor: pointer; font-family: var(--sf); transition: opacity .15s, transform .1s;
+    }
+    .btn:active { transform: scale(.97); opacity: .85; }
+    .btn-primary { background: var(--blue); color: white; }
+    .btn-ghost { background: rgba(255,255,255,.08); color: var(--text); border: 1px solid var(--border); }
+    .btn-danger { background: rgba(255,69,58,.2); color: var(--red); border: 1px solid rgba(255,69,58,.3); }
+    input[type="password"], input[type="text"], input[type="date"] {
+      background: rgba(255,255,255,.07); border: 1px solid var(--border); border-radius: 12px;
+      padding: 12px 16px; color: var(--text); font-size: 16px; font-family: var(--sf); outline: none;
+      transition: background .2s;
+    }
+    input:focus { background: rgba(255,255,255,.11); }
+
+    /* ── LOGIN ── */
+    #s-login { max-width: 420px; padding-top: 100px; }
+    .login-logo { font-size: 52px; text-align: center; margin-bottom: 8px; }
+    .login-title { font-size: 30px; font-weight: 800; text-align: center; letter-spacing: -.03em; margin-bottom: 6px; }
+    .login-sub { font-size: 15px; color: var(--muted); text-align: center; margin-bottom: 28px; }
+    .login-field { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
+    .login-field label { font-size: 13px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+    .login-field input { width: 100%; }
+    .error-msg { color: var(--red); font-size: 14px; min-height: 20px; margin-top: 8px; }
+
+    /* ── TOP NAV ── */
+    .top-nav {
+      width: 100%; background: rgba(0,0,0,.8); backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border); padding: 0 24px; height: 52px;
+      display: flex; align-items: center; justify-content: space-between;
+      position: sticky; top: 0; z-index: 100;
+    }
+    .nav-brand { font-size: 16px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+    .nav-right { display: flex; align-items: center; gap: 12px; }
+    .nav-teacher { font-size: 13px; color: var(--muted); }
+
+    /* ── DASHBOARD ── */
+    .dash-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 24px; }
+    .dash-header h2 { font-size: 28px; font-weight: 800; letter-spacing: -.03em; }
+    .controls { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+    /* ── SUMMARY CARDS ── */
+    .summary-strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
+    .sum-card { background: var(--card); border: 1px solid var(--border); border-radius: 18px; padding: 16px 18px; }
+    .sum-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .07em; font-weight: 600; }
+    .sum-value { font-size: 28px; font-weight: 700; margin-top: 6px; }
+
+    /* ── STUDENT TABLE ── */
+    .table-wrap { background: var(--card); border: 1px solid var(--border); border-radius: 20px; overflow: hidden; }
+    table { width: 100%; border-collapse: collapse; }
+    th { padding: 14px 16px; font-size: 11px; font-weight: 700; color: var(--muted);
+      text-transform: uppercase; letter-spacing: .07em; text-align: left;
+      border-bottom: 1px solid var(--border); }
+    td { padding: 14px 16px; font-size: 14px; border-bottom: 1px solid rgba(255,255,255,.04); vertical-align: middle; }
+    tr:last-child td { border-bottom: none; }
+    tr.clickable { cursor: pointer; transition: background .15s; }
+    tr.clickable:hover td { background: rgba(255,255,255,.04); }
+    .score-cell { font-weight: 700; font-size: 15px; }
+    .score-cell.green { color: var(--green); }
+    .score-cell.yellow { color: var(--yellow); }
+    .score-cell.red { color: var(--red); }
+    .topic-mini { display: flex; gap: 6px; }
+    .topic-dot { font-size: 12px; padding: 3px 8px; border-radius: 8px; font-weight: 600; }
+    .topic-dot.done { background: rgba(48,209,88,.15); color: var(--green); }
+    .topic-dot.not  { background: rgba(255,255,255,.06); color: var(--muted); }
+    .status-badge {
+      display: inline-block; padding: 4px 10px; border-radius: 10px; font-size: 12px; font-weight: 700;
+    }
+    .status-badge.complete { background: rgba(48,209,88,.15); color: var(--green); border: 1px solid rgba(48,209,88,.25); }
+    .status-badge.partial  { background: rgba(255,159,10,.15); color: var(--orange); border: 1px solid rgba(255,159,10,.25); }
+    .status-badge.none     { background: rgba(255,255,255,.06); color: var(--muted); border: 1px solid var(--border); }
+
+    /* ── ADD STUDENT SECTION ── */
+    .add-section { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 22px 24px; margin-bottom: 24px; }
+    .add-section h3 { font-size: 16px; font-weight: 700; margin-bottom: 16px; }
+    .add-form { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; }
+    .add-field { display: flex; flex-direction: column; gap: 6px; }
+    .add-field label { font-size: 12px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .06em; }
+    .add-field input { width: 160px; }
+    .add-msg { font-size: 13px; margin-top: 8px; }
+
+    /* ── DETAIL OVERLAY ── */
+    .overlay {
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,.75);
+      backdrop-filter: blur(10px); z-index: 200; align-items: flex-start; justify-content: center;
+      padding: 40px 16px; overflow-y: auto;
+    }
+    .overlay.open { display: flex; }
+    .detail-panel {
+      width: 100%; max-width: 700px; background: #111; border: 1px solid var(--border);
+      border-radius: 28px; padding: 28px; animation: fadeUp .25s ease;
+    }
+    .detail-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+    .detail-header h2 { font-size: 24px; font-weight: 800; letter-spacing: -.02em; }
+    .session-block { margin-bottom: 24px; }
+    .session-title {
+      display: flex; align-items: center; gap: 10px; margin-bottom: 14px;
+      padding-bottom: 10px; border-bottom: 1px solid var(--border);
+    }
+    .session-title h3 { font-size: 17px; font-weight: 700; }
+    .session-meta { font-size: 13px; color: var(--muted); }
+    .answers-table { width: 100%; border-collapse: collapse; }
+    .answers-table th { font-size: 11px; color: var(--muted); font-weight: 700;
+      text-transform: uppercase; letter-spacing: .06em; padding: 8px 10px;
+      border-bottom: 1px solid var(--border); text-align: left; }
+    .answers-table td { padding: 10px 10px; font-size: 13px; border-bottom: 1px solid rgba(255,255,255,.04); }
+    .answers-table tr:last-child td { border-bottom: none; }
+    .correct-chip { color: var(--green); font-weight: 700; }
+    .wrong-chip { color: var(--red); font-weight: 700; }
+    .no-data { text-align: center; color: var(--muted); padding: 32px; font-size: 15px; }
+
+    @media(max-width:700px) {
+      .summary-strip { grid-template-columns: 1fr 1fr; }
+      .add-form { flex-direction: column; }
+      .add-field input { width: 100%; }
+      th:nth-child(4), td:nth-child(4) { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ══ LOGIN SCREEN ══ -->
+  <div id="s-login" class="screen active" style="margin:0 auto;">
+    <div class="login-logo">🍎</div>
+    <div class="login-title">Teacher Dashboard</div>
+    <div class="login-sub">Sai Tech Learning — Progress Tracker</div>
+    <div class="card">
+      <div class="login-field">
+        <label>Teacher Password</label>
+        <input type="password" id="t-password" placeholder="Enter password" onkeypress="if(event.key==='Enter')doLogin()">
+      </div>
+      <button class="btn btn-primary" style="width:100%;padding:14px;font-size:16px;" onclick="doLogin()">Sign In</button>
+      <div class="error-msg" id="login-err"></div>
+      <p style="font-size:12px;color:var(--muted);margin-top:14px;text-align:center;">Default password: <code style="background:rgba(255,255,255,.08);padding:2px 6px;border-radius:6px">teacher123</code></p>
+    </div>
+  </div>
+
+  <!-- ══ MAIN DASHBOARD ══ -->
+  <div id="s-dashboard" class="screen" style="padding-top:0;max-width:none;">
+    <!-- Sticky Nav -->
+    <div class="top-nav">
+      <div class="nav-brand">🍎 <span>Learning Dashboard</span></div>
+      <div class="nav-right">
+        <span class="nav-teacher" id="nav-date"></span>
+        <button class="btn btn-ghost" onclick="doLogout()">Sign Out</button>
+      </div>
+    </div>
+
+    <div style="max-width:900px;margin:0 auto;padding:32px 24px;">
+      <!-- Header + Controls -->
+      <div class="dash-header">
+        <h2>Student Progress</h2>
+        <div class="controls">
+          <input type="date" id="date-picker" onchange="loadProgress()">
+          <button class="btn btn-ghost" onclick="loadProgress()">↻ Refresh</button>
+        </div>
+      </div>
+
+      <!-- Summary Strip -->
+      <div class="summary-strip">
+        <div class="sum-card">
+          <div class="sum-label">Students</div>
+          <div class="sum-value" id="sum-students">—</div>
+        </div>
+        <div class="sum-card">
+          <div class="sum-label">All Complete</div>
+          <div class="sum-value" id="sum-complete" style="color:var(--green)">—</div>
+        </div>
+        <div class="sum-card">
+          <div class="sum-label">Avg Score</div>
+          <div class="sum-value" id="sum-avg" style="color:var(--blue)">—</div>
+        </div>
+        <div class="sum-card">
+          <div class="sum-label">Questions Done</div>
+          <div class="sum-value" id="sum-questions">—</div>
+        </div>
+      </div>
+
+      <!-- Add Student -->
+      <div class="add-section">
+        <h3>➕ Add New Student</h3>
+        <div class="add-form">
+          <div class="add-field">
+            <label>Student Name</label>
+            <input type="text" id="new-name" placeholder="e.g. Alex">
+          </div>
+          <div class="add-field">
+            <label>4-Digit PIN</label>
+            <input type="text" id="new-pin" placeholder="e.g. 1234" maxlength="4" inputmode="numeric">
+          </div>
+          <button class="btn btn-primary" onclick="addStudent()">Add Student</button>
+        </div>
+        <div class="add-msg" id="add-msg"></div>
+      </div>
+
+      <!-- Progress Table -->
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Student</th>
+              <th>🕐 Time</th>
+              <th>📅 Calendar</th>
+              <th>💰 Money</th>
+              <th>Total</th>
+              <th>Time Spent</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="progress-body">
+            <tr><td colspan="7" class="no-data">Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ STUDENT DETAIL OVERLAY ══ -->
+  <div class="overlay" id="detail-overlay" onclick="closeDetail(event)">
+    <div class="detail-panel" id="detail-panel">
+      <div class="detail-header">
+        <h2 id="detail-name">Student</h2>
+        <button class="btn btn-ghost" onclick="closeOverlay()">✕ Close</button>
+      </div>
+      <div id="detail-body">
+        <p class="no-data">Loading...</p>
+      </div>
+    </div>
+  </div>
+
+<script>
+  const BFF = 'http://localhost:3000';
+  let teacherPass = '';
+
+  function showScreen(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    window.scrollTo(0, 0);
+  }
+
+  // ── LOGIN ──
+  async function doLogin() {
+    const pw = document.getElementById('t-password').value;
+    const err = document.getElementById('login-err');
+    if (!pw) { err.textContent = 'Please enter the teacher password.'; return; }
+    err.textContent = '';
+    try {
+      const res = await fetch(`${BFF}/api/teacher/login`, {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ password: pw }),
+      });
+      if (!res.ok) { err.textContent = 'Wrong password. Try again.'; return; }
+      teacherPass = pw;
+      sessionStorage.setItem('t_pass', pw);
+      initDashboard();
+    } catch {
+      err.textContent = 'Cannot connect to server. Is the BFF running?';
+    }
+  }
+
+  function doLogout() {
+    teacherPass = '';
+    sessionStorage.removeItem('t_pass');
+    showScreen('s-login');
+  }
+
+  function initDashboard() {
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('date-picker').value = today;
+    document.getElementById('nav-date').textContent =
+      new Date().toLocaleDateString('en-US', {weekday:'long', month:'long', day:'numeric'});
+    showScreen('s-dashboard');
+    loadProgress();
+  }
+
+  // ── LOAD PROGRESS ──
+  async function loadProgress() {
+    const date = document.getElementById('date-picker').value ||
+      new Date().toISOString().split('T')[0];
+    const tbody = document.getElementById('progress-body');
+    tbody.innerHTML = '<tr><td colspan="7" class="no-data">Loading...</td></tr>';
+
+    try {
+      const res = await fetch(`${BFF}/api/teacher/progress?password=${encodeURIComponent(teacherPass)}&date=${date}`);
+      if (!res.ok) { tbody.innerHTML = '<tr><td colspan="7" class="no-data">Unauthorized</td></tr>'; return; }
+      const data = await res.json();
+      renderProgress(data);
+    } catch {
+      tbody.innerHTML = '<tr><td colspan="7" class="no-data">Cannot connect to server.</td></tr>';
+    }
+  }
+
+  function scoreColor(score, total) {
+    if (!total) return '';
+    const pct = score / total;
+    return pct >= .8 ? 'green' : pct >= .5 ? 'yellow' : 'red';
+  }
+
+  function fmtTime(secs) {
+    if (!secs) return '—';
+    const m = Math.floor(secs/60), s = secs%60;
+    return m > 0 ? `${m}m ${s}s` : `${s}s`;
+  }
+
+  function renderProgress(data) {
+    const tbody = document.getElementById('progress-body');
+
+    if (!data.length) {
+      tbody.innerHTML = '<tr><td colspan="7" class="no-data">No students registered yet. Add a student below.</td></tr>';
+      document.getElementById('sum-students').textContent = '0';
+      document.getElementById('sum-complete').textContent = '0';
+      document.getElementById('sum-avg').textContent = '—';
+      document.getElementById('sum-questions').textContent = '0';
+      return;
+    }
+
+    // Summary strip
+    const totalStudents = data.length;
+    const completeCount = data.filter(s => s.allCompleted).length;
+    const totalScore = data.reduce((a,s)=>a+s.totalScore,0);
+    const totalQ = data.reduce((a,s)=>a+s.totalQuestions,0);
+    const avgPct = totalQ ? Math.round((totalScore/totalQ)*100) : 0;
+
+    document.getElementById('sum-students').textContent = totalStudents;
+    document.getElementById('sum-complete').textContent = `${completeCount}/${totalStudents}`;
+    document.getElementById('sum-avg').textContent = totalQ ? `${avgPct}%` : '—';
+    document.getElementById('sum-questions').textContent = totalQ;
+
+    // Table rows
+    tbody.innerHTML = data.map(s => {
+      const topicCells = s.topics.map(t =>
+        `<td><span class="score-cell ${scoreColor(t.score, t.total)}">${t.total ? `${t.score}/${t.total}` : '—'}</span></td>`
+      ).join('');
+
+      const statusDone = s.topics.filter(t=>t.completed).length;
+      const statusClass = statusDone===3 ? 'complete' : statusDone>0 ? 'partial' : 'none';
+      const statusLabel = statusDone===3 ? '✓ All Done' : statusDone>0 ? `${statusDone}/3 Done` : 'Not Started';
+
+      return `<tr class="clickable" onclick="openDetail(${s.id}, '${escHtml(s.name)}')">
+        <td style="font-weight:600;font-size:15px">${escHtml(s.name)}</td>
+        ${topicCells}
+        <td style="font-weight:700">${s.totalQ||s.totalQuestions ? `${s.totalScore}/${s.totalQuestions}` : '—'}</td>
+        <td style="color:var(--muted)">${fmtTime(s.totalTime)}</td>
+        <td><span class="status-badge ${statusClass}">${statusLabel}</span></td>
+      </tr>`;
+    }).join('');
+  }
+
+  function escHtml(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  // ── ADD STUDENT ──
+  async function addStudent() {
+    const name = document.getElementById('new-name').value.trim();
+    const pin  = document.getElementById('new-pin').value.trim();
+    const msg  = document.getElementById('add-msg');
+
+    if (!name || pin.length !== 4 || !/^\d+$/.test(pin)) {
+      msg.style.color = 'var(--red)';
+      msg.textContent = 'Please enter a name and a 4-digit number PIN.';
+      return;
+    }
+
+    try {
+      const res = await fetch(`${BFF}/api/student/register`, {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ name, pin, teacherPassword: teacherPass }),
+      });
+      if (!res.ok) { msg.style.color='var(--red)'; msg.textContent='Failed to add student.'; return; }
+      const student = await res.json();
+      msg.style.color = 'var(--green)';
+      msg.textContent = `✓ ${student.name} added! PIN: ${pin}`;
+      document.getElementById('new-name').value = '';
+      document.getElementById('new-pin').value = '';
+      loadProgress();
+    } catch {
+      msg.style.color = 'var(--red)';
+      msg.textContent = 'Server error.';
+    }
+  }
+
+  // ── STUDENT DETAIL ──
+  async function openDetail(studentId, name) {
+    const date = document.getElementById('date-picker').value || new Date().toISOString().split('T')[0];
+    document.getElementById('detail-name').textContent = `${name} — ${new Date(date+'T12:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}`;
+    document.getElementById('detail-body').innerHTML = '<p class="no-data">Loading...</p>';
+    document.getElementById('detail-overlay').classList.add('open');
+
+    try {
+      const res = await fetch(`${BFF}/api/teacher/student-detail?password=${encodeURIComponent(teacherPass)}&studentId=${studentId}&date=${date}`);
+      const data = await res.json();
+      renderDetail(data);
+    } catch {
+      document.getElementById('detail-body').innerHTML = '<p class="no-data">Could not load details.</p>';
+    }
+  }
+
+  function renderDetail({ sessions }) {
+    if (!sessions || !sessions.length) {
+      document.getElementById('detail-body').innerHTML = '<p class="no-data">No activity on this date.</p>';
+      return;
+    }
+
+    const TOPIC_ICON = { time:'🕐', calendar:'📅', money:'💰' };
+    const html = sessions.map(session => {
+      const score = session.score, total = session.total_questions;
+      const pct = total ? Math.round((score/total)*100) : 0;
+      const timeStr = fmtTime(session.time_spent_secs);
+
+      const answerRows = session.answers?.length
+        ? session.answers.map((a, i) => `
+          <tr>
+            <td style="color:var(--muted)">${i+1}</td>
+            <td>${escHtml(a.question_text)}</td>
+            <td>${escHtml(a.answer_given || '—')}</td>
+            <td>${escHtml(a.correct_answer)}</td>
+            <td class="${a.is_correct?'correct-chip':'wrong-chip'}">${a.is_correct?'✓ Correct':'✗ Wrong'}</td>
+            <td style="color:var(--muted)">${fmtTime(a.time_spent_secs)}</td>
+          </tr>`).join('')
+        : `<tr><td colspan="6" class="no-data">No answers recorded.</td></tr>`;
+
+      return `<div class="session-block">
+        <div class="session-title">
+          <span style="font-size:22px">${TOPIC_ICON[session.topic]||'📖'}</span>
+          <h3>${session.topic.charAt(0).toUpperCase()+session.topic.slice(1)}</h3>
+          <span class="session-meta">Score: ${score}/${total} (${pct}%) · Time: ${timeStr}</span>
+          ${session.completed ? '<span class="status-badge complete">Complete</span>' : '<span class="status-badge none">Incomplete</span>'}
+        </div>
+        <table class="answers-table">
+          <thead><tr>
+            <th>#</th><th>Question</th><th>Given</th><th>Correct</th><th>Result</th><th>Time</th>
+          </tr></thead>
+          <tbody>${answerRows}</tbody>
+        </table>
+      </div>`;
+    }).join('');
+
+    document.getElementById('detail-body').innerHTML = html;
+  }
+
+  function closeDetail(e) {
+    if (e.target === document.getElementById('detail-overlay')) closeOverlay();
+  }
+
+  function closeOverlay() {
+    document.getElementById('detail-overlay').classList.remove('open');
+  }
+
+  // ── Auto re-login from session ──
+  window.addEventListener('load', () => {
+    const saved = sessionStorage.getItem('t_pass');
+    if (saved) { teacherPass = saved; initDashboard(); }
+  });
+</script>
+</body>
+</html>

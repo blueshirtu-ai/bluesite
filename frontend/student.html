@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>Learning Time! 📚</title>
+  <style>
+    :root {
+      --bg: #000;
+      --card: rgba(28,28,30,0.85);
+      --border: rgba(255,255,255,0.12);
+      --text: #f5f5f7;
+      --muted: #86868b;
+      --blue: #0071e3;
+      --green: #30d158;
+      --yellow: #ffd60a;
+      --red: #ff453a;
+      --sf: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    body {
+      font-family: var(--sf); background: var(--bg); color: var(--text);
+      min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+      overflow-x: hidden;
+    }
+
+    /* ── Screen Management ── */
+    .screen { display: none; width: 100%; max-width: 560px; padding: 24px 20px; animation: fadeUp .3s ease; }
+    .screen.active { display: flex; flex-direction: column; align-items: center; }
+    @keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+
+    /* ── Shared Components ── */
+    .card {
+      width: 100%; background: var(--card); backdrop-filter: blur(40px);
+      border: 1px solid var(--border); border-radius: 28px;
+      padding: 32px 28px; box-shadow: 0 20px 50px rgba(0,0,0,.5);
+    }
+    .big-btn {
+      width: 100%; padding: 18px; border: none; border-radius: 20px;
+      font-size: 20px; font-weight: 700; cursor: pointer;
+      transition: transform .15s, opacity .15s; letter-spacing: -.01em;
+    }
+    .big-btn:active { transform: scale(.97); opacity: .85; }
+    .big-btn.primary { background: var(--blue); color: white; }
+    .big-btn.outline { background: rgba(255,255,255,.08); color: var(--text); border: 1px solid var(--border); }
+
+    /* ── LOGIN SCREEN ── */
+    #s-login { padding-top: 60px; }
+    .login-icon { font-size: 72px; text-align: center; margin-bottom: 8px; }
+    .login-title { font-size: 36px; font-weight: 800; text-align: center; margin-bottom: 6px; letter-spacing: -.03em; }
+    .login-sub { font-size: 18px; color: var(--muted); text-align: center; margin-bottom: 32px; }
+    .field-label { font-size: 13px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 8px; }
+    .field-group { margin-bottom: 20px; }
+    select, input[type="text"] {
+      width: 100%; background: rgba(255,255,255,.07); border: 1px solid var(--border);
+      border-radius: 16px; padding: 16px 20px; color: var(--text);
+      font-size: 18px; font-family: var(--sf); outline: none; appearance: none;
+      transition: background .2s;
+    }
+    select:focus, input:focus { background: rgba(255,255,255,.11); }
+    select option { background: #1c1c1e; }
+    .pin-row { display: flex; gap: 12px; }
+    .pin-box {
+      flex: 1; background: rgba(255,255,255,.07); border: 1px solid var(--border);
+      border-radius: 16px; height: 64px; text-align: center; color: var(--text);
+      font-size: 28px; font-weight: 700; font-family: var(--sf); outline: none;
+      transition: background .2s, border-color .2s;
+    }
+    .pin-box:focus { background: rgba(255,255,255,.11); border-color: var(--blue); }
+    .error-msg { color: var(--red); font-size: 15px; text-align: center; margin-top: 12px; min-height: 22px; }
+
+    /* ── DASHBOARD SCREEN ── */
+    .dash-greeting { text-align: center; margin-bottom: 32px; }
+    .dash-greeting .wave { font-size: 48px; }
+    .dash-greeting h2 { font-size: 34px; font-weight: 800; letter-spacing: -.03em; margin-top: 4px; }
+    .dash-greeting .date { font-size: 16px; color: var(--muted); margin-top: 6px; }
+    .topic-cards { width: 100%; display: flex; flex-direction: column; gap: 14px; }
+    .topic-card {
+      background: var(--card); border: 1px solid var(--border); border-radius: 24px;
+      padding: 22px 24px; display: flex; align-items: center; gap: 18px;
+      cursor: pointer; transition: transform .2s, background .2s;
+      box-shadow: 0 8px 20px rgba(0,0,0,.3);
+    }
+    .topic-card:active { transform: scale(.98); }
+    .topic-card.done { opacity: .65; }
+    .topic-card .t-icon { font-size: 42px; width: 56px; text-align: center; flex-shrink: 0; }
+    .topic-card .t-info { flex: 1; }
+    .topic-card .t-name { font-size: 22px; font-weight: 700; }
+    .topic-card .t-stars { font-size: 18px; margin-top: 4px; }
+    .topic-card .t-badge {
+      font-size: 12px; padding: 4px 10px; border-radius: 10px; font-weight: 700;
+      background: rgba(48,209,88,.2); color: var(--green); border: 1px solid rgba(48,209,88,.3);
+    }
+    .topic-card.time-card { border-left: 4px solid var(--blue); }
+    .topic-card.calendar-card { border-left: 4px solid var(--green); }
+    .topic-card.money-card { border-left: 4px solid var(--yellow); }
+
+    /* ── WORKSHEET SCREEN ── */
+    #s-worksheet { padding-top: 16px; }
+    .ws-header {
+      width: 100%; display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 14px;
+    }
+    .back-btn {
+      background: rgba(255,255,255,.08); border: 1px solid var(--border);
+      border-radius: 12px; padding: 8px 14px; color: var(--text);
+      font-size: 14px; cursor: pointer; transition: background .2s;
+    }
+    .back-btn:hover { background: rgba(255,255,255,.14); }
+    .q-counter { font-size: 14px; color: var(--muted); font-weight: 500; }
+    .topic-pill {
+      font-size: 13px; padding: 5px 12px; border-radius: 20px; font-weight: 600;
+    }
+    .topic-pill.time { background: rgba(0,113,227,.2); color: #5ac8fa; }
+    .topic-pill.calendar { background: rgba(48,209,88,.2); color: var(--green); }
+    .topic-pill.money { background: rgba(255,214,10,.2); color: var(--yellow); }
+    .progress-track {
+      width: 100%; height: 6px; background: rgba(255,255,255,.1);
+      border-radius: 3px; margin-bottom: 20px; overflow: hidden;
+    }
+    .progress-fill { height: 100%; border-radius: 3px; transition: width .4s ease; }
+    .fill-time { background: var(--blue); }
+    .fill-calendar { background: var(--green); }
+    .fill-money { background: var(--yellow); }
+    .question-card {
+      width: 100%; background: var(--card); border: 1px solid var(--border);
+      border-radius: 28px; padding: 28px 24px;
+      box-shadow: 0 20px 50px rgba(0,0,0,.5);
+    }
+    #visual-aid { display: flex; justify-content: center; margin-bottom: 20px; }
+    .question-text { font-size: 22px; font-weight: 700; text-align: center; line-height: 1.35; margin-bottom: 24px; letter-spacing: -.01em; }
+    .answer-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .answer-btn {
+      padding: 18px 12px; background: rgba(255,255,255,.07); border: 2px solid var(--border);
+      border-radius: 18px; color: var(--text); font-size: 18px; font-weight: 600;
+      cursor: pointer; text-align: center; font-family: var(--sf);
+      transition: background .15s, border-color .15s, transform .1s;
+    }
+    .answer-btn:active { transform: scale(.96); }
+    .answer-btn:hover { background: rgba(255,255,255,.12); border-color: rgba(255,255,255,.25); }
+
+    /* ── FEEDBACK SCREEN ── */
+    #s-feedback { justify-content: center; min-height: 100vh; padding-top: 0; }
+    .feedback-card {
+      width: 100%; text-align: center; padding: 48px 32px;
+      border-radius: 36px; border: 1px solid var(--border);
+    }
+    .feedback-card.correct { background: rgba(16,60,30,.9); border-color: rgba(48,209,88,.3); }
+    .feedback-card.wrong { background: rgba(60,16,16,.9); border-color: rgba(255,69,58,.3); }
+    .feedback-icon-big { font-size: 88px; margin-bottom: 16px; animation: popIn .4s cubic-bezier(.34,1.56,.64,1); }
+    .feedback-title { font-size: 34px; font-weight: 800; margin-bottom: 10px; letter-spacing: -.03em; }
+    .feedback-card.correct .feedback-title { color: var(--green); }
+    .feedback-card.wrong .feedback-title { color: var(--red); }
+    .feedback-detail { font-size: 18px; color: var(--muted); margin-bottom: 36px; line-height: 1.5; }
+    @keyframes popIn { from{opacity:0;transform:scale(.5)} to{opacity:1;transform:scale(1)} }
+
+    /* ── TOPIC COMPLETE SCREEN ── */
+    #s-topic-complete { justify-content: center; min-height: 100vh; padding-top: 0; }
+    .complete-card {
+      width: 100%; text-align: center; background: var(--card);
+      border: 1px solid var(--border); border-radius: 36px; padding: 48px 32px;
+      box-shadow: 0 30px 60px rgba(0,0,0,.6);
+    }
+    .complete-trophy { font-size: 88px; animation: bounce .6s cubic-bezier(.34,1.56,.64,1); }
+    @keyframes bounce { from{transform:scale(0)} 60%{transform:scale(1.15)} to{transform:scale(1)} }
+    .complete-title { font-size: 32px; font-weight: 800; margin: 16px 0 8px; letter-spacing: -.03em; }
+    .complete-stars { font-size: 36px; margin-bottom: 12px; }
+    .complete-score { font-size: 20px; color: var(--muted); margin-bottom: 32px; }
+
+    /* ── DAILY SUMMARY SCREEN ── */
+    #s-summary { justify-content: center; min-height: 100vh; padding-top: 0; }
+    .summary-card {
+      width: 100%; text-align: center; background: var(--card);
+      border: 1px solid var(--border); border-radius: 36px; padding: 40px 28px;
+      box-shadow: 0 30px 60px rgba(0,0,0,.6);
+    }
+    .summary-badge { font-size: 96px; animation: spin .6s ease; }
+    @keyframes spin { from{transform:rotateY(90deg);opacity:0} to{transform:rotateY(0deg);opacity:1} }
+    .summary-title { font-size: 30px; font-weight: 800; margin: 16px 0 28px; letter-spacing: -.03em; }
+    .summary-rows { width: 100%; margin-bottom: 24px; display: flex; flex-direction: column; gap: 12px; }
+    .summary-row {
+      display: flex; align-items: center; justify-content: space-between;
+      background: rgba(255,255,255,.05); border-radius: 16px; padding: 14px 18px;
+    }
+    .summary-row .row-label { font-size: 17px; font-weight: 600; }
+    .summary-row .row-stars { font-size: 20px; }
+    .summary-row .row-score { font-size: 16px; color: var(--muted); }
+    .summary-total { font-size: 22px; font-weight: 700; margin-bottom: 32px; }
+
+    /* ── Calendar visual ── */
+    .cal-wrap { background: rgba(255,255,255,.06); border-radius: 18px; padding: 16px; width: 280px; }
+    .cal-month { text-align: center; font-size: 15px; font-weight: 700; margin-bottom: 10px; }
+    .cal-grid { display: grid; grid-template-columns: repeat(7,1fr); gap: 3px; }
+    .cal-day-name { text-align: center; font-size: 10px; color: var(--muted); font-weight: 600; padding: 2px 0; }
+    .cal-day {
+      text-align: center; font-size: 12px; color: var(--text);
+      width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;
+      border-radius: 50%; margin: 0 auto;
+    }
+    .cal-day.hl { background: var(--blue); color: white; font-weight: 700; }
+    .cal-day.empty { background: transparent; }
+
+    /* ── Coin visual ── */
+    .coins-wrap { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; padding: 8px; }
+    .coin {
+      border-radius: 50%; display: flex; align-items: center; justify-content: center;
+      font-weight: 800; color: white; box-shadow: 0 4px 10px rgba(0,0,0,.5);
+      text-shadow: 0 1px 3px rgba(0,0,0,.6); flex-shrink: 0;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ══ LOGIN SCREEN ══ -->
+  <div id="s-login" class="screen active">
+    <div class="login-icon">📚</div>
+    <div class="login-title">Learning Time!</div>
+    <div class="login-sub">Let's practice today!</div>
+    <div class="card">
+      <div class="field-group">
+        <div class="field-label">Who are you?</div>
+        <select id="name-select">
+          <option value="">Choose your name...</option>
+        </select>
+      </div>
+      <div class="field-group">
+        <div class="field-label">Enter your PIN</div>
+        <div class="pin-row">
+          <input class="pin-box" type="tel" maxlength="1" inputmode="numeric" id="p0">
+          <input class="pin-box" type="tel" maxlength="1" inputmode="numeric" id="p1">
+          <input class="pin-box" type="tel" maxlength="1" inputmode="numeric" id="p2">
+          <input class="pin-box" type="tel" maxlength="1" inputmode="numeric" id="p3">
+        </div>
+      </div>
+      <button class="big-btn primary" onclick="doLogin()">Let's Go! 🚀</button>
+      <div class="error-msg" id="login-err"></div>
+    </div>
+  </div>
+
+  <!-- ══ DASHBOARD SCREEN ══ -->
+  <div id="s-dashboard" class="screen">
+    <div class="dash-greeting">
+      <div class="wave">👋</div>
+      <h2>Hello, <span id="student-name">Friend</span>!</h2>
+      <div class="date" id="today-date"></div>
+    </div>
+    <div class="topic-cards">
+      <div class="topic-card time-card" id="card-time" onclick="startTopic('time')">
+        <div class="t-icon">🕐</div>
+        <div class="t-info">
+          <div class="t-name">Telling Time</div>
+          <div class="t-stars" id="stars-time">☆☆☆☆☆</div>
+        </div>
+        <div class="t-badge" id="badge-time" style="display:none">Done ✓</div>
+      </div>
+      <div class="topic-card calendar-card" id="card-calendar" onclick="startTopic('calendar')">
+        <div class="t-icon">📅</div>
+        <div class="t-info">
+          <div class="t-name">Calendar Skills</div>
+          <div class="t-stars" id="stars-calendar">☆☆☆☆☆</div>
+        </div>
+        <div class="t-badge" id="badge-calendar" style="display:none">Done ✓</div>
+      </div>
+      <div class="topic-card money-card" id="card-money" onclick="startTopic('money')">
+        <div class="t-icon">💰</div>
+        <div class="t-info">
+          <div class="t-name">Counting Money</div>
+          <div class="t-stars" id="stars-money">☆☆☆☆☆</div>
+        </div>
+        <div class="t-badge" id="badge-money" style="display:none">Done ✓</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ WORKSHEET SCREEN ══ -->
+  <div id="s-worksheet" class="screen">
+    <div class="ws-header">
+      <button class="back-btn" onclick="goToDashboard()">← Back</button>
+      <span class="q-counter" id="q-counter">Question 1 of 5</span>
+      <span class="topic-pill" id="topic-pill">🕐 Time</span>
+    </div>
+    <div class="progress-track">
+      <div class="progress-fill" id="progress-fill" style="width:0%"></div>
+    </div>
+    <div class="question-card">
+      <div id="visual-aid"></div>
+      <div class="question-text" id="q-text"></div>
+      <div class="answer-grid" id="answer-grid"></div>
+    </div>
+  </div>
+
+  <!-- ══ FEEDBACK SCREEN ══ -->
+  <div id="s-feedback" class="screen">
+    <div class="feedback-card" id="feedback-card">
+      <div class="feedback-icon-big" id="feedback-icon">✅</div>
+      <div class="feedback-title" id="feedback-title">Great job!</div>
+      <div class="feedback-detail" id="feedback-detail"></div>
+      <button class="big-btn primary" id="next-btn" onclick="nextQuestion()">Next Question →</button>
+    </div>
+  </div>
+
+  <!-- ══ TOPIC COMPLETE SCREEN ══ -->
+  <div id="s-topic-complete" class="screen">
+    <div class="complete-card">
+      <div class="complete-trophy" id="complete-trophy">🌟</div>
+      <div class="complete-title" id="complete-title">You finished Time!</div>
+      <div class="complete-stars" id="complete-stars">⭐⭐⭐⭐☆</div>
+      <div class="complete-score" id="complete-score">You got 4 out of 5!</div>
+      <button class="big-btn primary" onclick="returnToDashboard()">Back to Dashboard 🏠</button>
+    </div>
+  </div>
+
+  <!-- ══ DAILY SUMMARY SCREEN ══ -->
+  <div id="s-summary" class="screen">
+    <div class="summary-card">
+      <div class="summary-badge" id="summary-badge">🏅</div>
+      <div class="summary-title" id="summary-title">Amazing work today!</div>
+      <div class="summary-rows" id="summary-rows"></div>
+      <div class="summary-total" id="summary-total"></div>
+      <button class="big-btn outline" onclick="showScreen('s-dashboard')">All Done! 🎉</button>
+    </div>
+  </div>
+
+<script>
+  const BFF = 'http://localhost:3000';
+
+  // ── State ──
+  const S = {
+    student: null,       // { id, name }
+    dashboard: [],       // [{topic, completed, score, total, stars}]
+    topic: null,
+    sessionId: null,
+    questions: [],
+    idx: 0,
+    answers: [],
+    qStart: 0,
+    sessStart: 0,
+  };
+
+  // ── Helpers ──
+  const TOPICS = {
+    time:     { label: 'Telling Time',    icon: '🕐', pill: 'time',     fill: 'fill-time' },
+    calendar: { label: 'Calendar Skills', icon: '📅', pill: 'calendar', fill: 'fill-calendar' },
+    money:    { label: 'Counting Money',  icon: '💰', pill: 'money',    fill: 'fill-money' },
+  };
+  const CORRECT_MSG = ['Great job! 🎉','You got it! ⭐','Fantastic! 🌟','Awesome! 🎊','Way to go! 👏','Yes! That\'s it! 💫'];
+  const WRONG_MSG   = ['Almost there!','Good try!','Keep going!','You can do it!'];
+  const rand = arr => arr[Math.floor(Math.random() * arr.length)];
+
+  function showScreen(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    const el = document.getElementById(id);
+    el.classList.add('active');
+    window.scrollTo(0, 0);
+  }
+
+  function stars(n, total = 5) {
+    const filled = Math.round(n);
+    return '⭐'.repeat(Math.max(0, filled)) + '☆'.repeat(Math.max(0, total - filled));
+  }
+
+  function fmtTime(secs) {
+    const m = Math.floor(secs / 60), s = secs % 60;
+    return m > 0 ? `${m}m ${s}s` : `${s}s`;
+  }
+
+  // ── Init: populate student dropdown ──
+  async function init() {
+    document.getElementById('today-date').textContent =
+      new Date().toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric' });
+    try {
+      const res = await fetch(`${BFF}/api/student/list`);
+      if (!res.ok) throw new Error();
+      const students = await res.json();
+      const sel = document.getElementById('name-select');
+      students.forEach(s => {
+        const opt = document.createElement('option');
+        opt.value = s.id; opt.textContent = s.name;
+        sel.appendChild(opt);
+      });
+    } catch {
+      // Server offline — will show error on login attempt
+    }
+
+    // PIN auto-advance
+    const pins = document.querySelectorAll('.pin-box');
+    pins.forEach((box, i) => {
+      box.addEventListener('input', () => {
+        box.value = box.value.replace(/\D/,'');
+        if (box.value && i < pins.length - 1) pins[i+1].focus();
+        if (i === pins.length - 1 && box.value) doLogin();
+      });
+      box.addEventListener('keydown', e => {
+        if (e.key === 'Backspace' && !box.value && i > 0) pins[i-1].focus();
+      });
+    });
+  }
+
+  // ── LOGIN ──
+  async function doLogin() {
+    const studentId = document.getElementById('name-select').value;
+    const pin = ['p0','p1','p2','p3'].map(id => document.getElementById(id).value).join('');
+    const err = document.getElementById('login-err');
+
+    if (!studentId) { err.textContent = 'Please choose your name!'; return; }
+    if (pin.length !== 4) { err.textContent = 'Please enter your 4-digit PIN!'; return; }
+    err.textContent = '';
+
+    try {
+      const res = await fetch(`${BFF}/api/student/login`, {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ studentId, pin }),
+      });
+      if (!res.ok) { err.textContent = 'Wrong PIN. Try again! 🔑'; return; }
+      S.student = await res.json();
+      await loadDashboard();
+    } catch {
+      err.textContent = 'Cannot connect to server. Is the BFF running?';
+    }
+  }
+
+  // ── DASHBOARD ──
+  async function loadDashboard() {
+    document.getElementById('student-name').textContent = S.student.name;
+    try {
+      const res = await fetch(`${BFF}/api/student/dashboard?studentId=${S.student.id}`);
+      const data = await res.json();
+      S.dashboard = data.topics;
+      renderDashboard();
+    } catch {
+      S.dashboard = ['time','calendar','money'].map(t => ({ topic:t, completed:false, score:0, total:5, stars:0 }));
+      renderDashboard();
+    }
+    showScreen('s-dashboard');
+  }
+
+  function renderDashboard() {
+    S.dashboard.forEach(({ topic, completed, stars: s }) => {
+      document.getElementById(`stars-${topic}`).textContent = stars(s);
+      const badge = document.getElementById(`badge-${topic}`);
+      const card  = document.getElementById(`card-${topic}`);
+      badge.style.display = completed ? '' : 'none';
+      card.classList.toggle('done', completed);
+    });
+  }
+
+  // ── START TOPIC ──
+  async function startTopic(topic) {
+    S.topic = topic;
+    S.sessStart = Date.now();
+    S.answers = [];
+    S.idx = 0;
+
+    const t = TOPICS[topic];
+    document.getElementById('topic-pill').textContent = `${t.icon} ${t.label}`;
+    document.getElementById('topic-pill').className = `topic-pill ${t.pill}`;
+
+    try {
+      const res = await fetch(`${BFF}/api/student/questions?studentId=${S.student.id}&topic=${topic}`);
+      const data = await res.json();
+      S.sessionId = data.sessionId;
+      S.questions = data.questions;
+      renderQuestion();
+      showScreen('s-worksheet');
+    } catch {
+      alert('Cannot load questions. Is the server running?');
+    }
+  }
+
+  function goToDashboard() { showScreen('s-dashboard'); }
+
+  // ── RENDER QUESTION ──
+  function renderQuestion() {
+    const q = S.questions[S.idx];
+    const total = S.questions.length;
+    S.qStart = Date.now();
+
+    // Progress
+    document.getElementById('q-counter').textContent = `Question ${S.idx + 1} of ${total}`;
+    const fill = document.getElementById('progress-fill');
+    fill.style.width = `${(S.idx / total) * 100}%`;
+    fill.className = `progress-fill ${TOPICS[S.topic].fill}`;
+
+    // Visual aid
+    const aid = document.getElementById('visual-aid');
+    const vd = q.visual_data;
+    if (q.question_type === 'clock' && vd) {
+      aid.innerHTML = renderClock(vd.hours, vd.minutes);
+      aid.style.display = 'flex';
+    } else if (q.question_type === 'coins' && vd?.coins) {
+      aid.innerHTML = renderCoins(vd.coins);
+      aid.style.display = 'flex';
+    } else if (vd?.month) {
+      aid.innerHTML = renderCalendar(vd.month, vd.year, vd.highlight);
+      aid.style.display = 'flex';
+    } else {
+      aid.innerHTML = ''; aid.style.display = 'none';
+    }
+
+    // Question text
+    document.getElementById('q-text').textContent = q.question_text;
+
+    // Answer buttons
+    const options = Array.isArray(q.options) ? q.options : JSON.parse(q.options);
+    document.getElementById('answer-grid').innerHTML = options.map(opt =>
+      `<button class="answer-btn" onclick="submitAnswer(this,'${escHtml(opt)}')">${escHtml(opt)}</button>`
+    ).join('');
+  }
+
+  function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+  // ── SUBMIT ANSWER ──
+  async function submitAnswer(btn, answer) {
+    // Disable all buttons to prevent double-tap
+    document.querySelectorAll('.answer-btn').forEach(b => b.style.pointerEvents = 'none');
+
+    const q = S.questions[S.idx];
+    const correct = q.correct_answer;
+    const isCorrect = answer === correct;
+    const timeSecs = Math.round((Date.now() - S.qStart) / 1000);
+
+    S.answers.push({ questionId: q.id, answerGiven: answer, isCorrect, timeSecs });
+
+    // Fire-and-forget to BFF
+    fetch(`${BFF}/api/student/answer`, {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ sessionId: S.sessionId, questionId: q.id,
+        answerGiven: answer, isCorrect, timeSpentSecs: timeSecs }),
+    }).catch(() => {});
+
+    // Show feedback
+    const card  = document.getElementById('feedback-card');
+    const icon  = document.getElementById('feedback-icon');
+    const title = document.getElementById('feedback-title');
+    const detail = document.getElementById('feedback-detail');
+    const nextBtn = document.getElementById('next-btn');
+
+    const isLast = S.idx === S.questions.length - 1;
+
+    if (isCorrect) {
+      card.className = 'feedback-card correct';
+      icon.textContent = ['✅','🌟','🎉','⭐','🏆','💫'][Math.floor(Math.random()*6)];
+      title.textContent = rand(CORRECT_MSG);
+      detail.textContent = '';
+    } else {
+      card.className = 'feedback-card wrong';
+      icon.textContent = '💪';
+      title.textContent = rand(WRONG_MSG);
+      detail.textContent = `The answer was: ${correct}`;
+    }
+
+    nextBtn.textContent = isLast ? 'See My Score! 🏁' : 'Next Question →';
+    showScreen('s-feedback');
+  }
+
+  // ── NEXT QUESTION ──
+  function nextQuestion() {
+    S.idx++;
+    if (S.idx >= S.questions.length) {
+      completeSession();
+    } else {
+      renderQuestion();
+      showScreen('s-worksheet');
+    }
+  }
+
+  // ── COMPLETE SESSION ──
+  async function completeSession() {
+    const score = S.answers.filter(a => a.isCorrect).length;
+    const total = S.questions.length;
+    const timeSecs = Math.round((Date.now() - S.sessStart) / 1000);
+    const starCount = Math.round((score / total) * 5);
+
+    fetch(`${BFF}/api/student/session/complete`, {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ sessionId: S.sessionId, score, total, timeSpentSecs: timeSecs }),
+    }).catch(() => {});
+
+    const t = TOPICS[S.topic];
+    document.getElementById('complete-trophy').textContent =
+      score === total ? '🏆' : score >= total * .6 ? '🌟' : '💪';
+    document.getElementById('complete-title').textContent = `You finished ${t.label}!`;
+    document.getElementById('complete-stars').textContent = stars(starCount);
+    document.getElementById('complete-score').textContent =
+      `You got ${score} out of ${total}! (${fmtTime(timeSecs)})`;
+
+    showScreen('s-topic-complete');
+  }
+
+  // ── RETURN TO DASHBOARD ──
+  async function returnToDashboard() {
+    await loadDashboard();
+    const allDone = S.dashboard.every(t => t.completed);
+    if (allDone) showSummary();
+    else showScreen('s-dashboard');
+  }
+
+  // ── DAILY SUMMARY ──
+  function showSummary() {
+    const total = S.dashboard.reduce((a,t)=>a+t.score,0);
+    const max   = S.dashboard.reduce((a,t)=>a+t.total,0);
+    const pct   = max > 0 ? Math.round((total/max)*100) : 0;
+
+    document.getElementById('summary-badge').textContent =
+      pct === 100 ? '🏆' : pct >= 80 ? '🥇' : pct >= 60 ? '🥈' : '🌟';
+    document.getElementById('summary-title').textContent =
+      pct === 100 ? 'Perfect score! Amazing! 🎉' :
+      pct >= 80   ? `Great job today, ${S.student.name}! 🌟` :
+                    `Good work today, ${S.student.name}! 💪`;
+
+    const rows = S.dashboard.map(t => {
+      const T = TOPICS[t.topic];
+      return `<div class="summary-row">
+        <span class="row-label">${T.icon} ${T.label}</span>
+        <span class="row-stars">${stars(t.stars)}</span>
+        <span class="row-score">${t.score}/${t.total}</span>
+      </div>`;
+    }).join('');
+    document.getElementById('summary-rows').innerHTML = rows;
+    document.getElementById('summary-total').textContent = `Total: ${total} out of ${max} ✨`;
+    showScreen('s-summary');
+  }
+
+  // ── VISUAL: Analog Clock ──
+  function renderClock(h, m) {
+    const S2=220, cx=110, cy=110, R=100;
+    const rad = d => d * Math.PI / 180;
+    let ticks = '';
+    for (let i=0; i<60; i++) {
+      const a = rad(i*6-90), big = i%5===0;
+      const r1 = R-(big?14:7), r2 = R-1;
+      ticks += `<line x1="${(cx+Math.cos(a)*r1).toFixed(1)}" y1="${(cy+Math.sin(a)*r1).toFixed(1)}"
+        x2="${(cx+Math.cos(a)*r2).toFixed(1)}" y2="${(cy+Math.sin(a)*r2).toFixed(1)}"
+        stroke="${big?'#ccc':'#444'}" stroke-width="${big?2.5:1}" stroke-linecap="round"/>`;
+    }
+    let nums = [12,1,2,3,4,5,6,7,8,9,10,11].map((n,i) => {
+      const a = rad(i*30-90);
+      return `<text x="${(cx+Math.cos(a)*(R-26)).toFixed(1)}" y="${(cy+Math.sin(a)*(R-26)+5).toFixed(1)}"
+        text-anchor="middle" fill="#f5f5f7" font-size="14" font-weight="600" font-family="system-ui">${n}</text>`;
+    }).join('');
+    const hA = rad((h%12 + m/60)*30-90);
+    const mA = rad(m*6-90);
+    const hx=(cx+Math.cos(hA)*58).toFixed(1), hy=(cy+Math.sin(hA)*58).toFixed(1);
+    const mx=(cx+Math.cos(mA)*78).toFixed(1), my=(cy+Math.sin(mA)*78).toFixed(1);
+    return `<svg width="${S2}" height="${S2}" viewBox="0 0 ${S2} ${S2}">
+      <circle cx="${cx}" cy="${cy}" r="${R}" fill="#1c1c1e" stroke="#3a3a3c" stroke-width="3"/>
+      ${ticks}${nums}
+      <line x1="${cx}" y1="${cy}" x2="${hx}" y2="${hy}" stroke="#f5f5f7" stroke-width="7" stroke-linecap="round"/>
+      <line x1="${cx}" y1="${cy}" x2="${mx}" y2="${my}" stroke="#0071e3" stroke-width="4" stroke-linecap="round"/>
+      <circle cx="${cx}" cy="${cy}" r="7" fill="#0071e3"/>
+      <circle cx="${cx}" cy="${cy}" r="3" fill="white"/>
+    </svg>`;
+  }
+
+  // ── VISUAL: Calendar ──
+  function renderCalendar(month, year, highlight) {
+    const days = new Date(year, month, 0).getDate();
+    const first = new Date(year, month-1, 1).getDay();
+    const name = new Date(year, month-1).toLocaleString('default',{month:'long'});
+    const dn = ['Su','Mo','Tu','We','Th','Fr','Sa'];
+    let cells = dn.map(d=>`<div class="cal-day-name">${d}</div>`).join('');
+    for(let i=0;i<first;i++) cells+=`<div class="cal-day empty"></div>`;
+    for(let d=1;d<=days;d++) cells+=`<div class="cal-day${d===highlight?' hl':''}">${d}</div>`;
+    return `<div class="cal-wrap">
+      <div class="cal-month">${name} ${year}</div>
+      <div class="cal-grid">${cells}</div>
+    </div>`;
+  }
+
+  // ── VISUAL: Coins ──
+  function renderCoins(coins) {
+    const C = {
+      quarter:{size:54,bg:'radial-gradient(circle at 35% 30%,#e0e0e0,#8c8c8c)',label:'25¢',border:'#aaa'},
+      dime:   {size:40,bg:'radial-gradient(circle at 35% 30%,#e0e0e0,#8c8c8c)',label:'10¢',border:'#aaa'},
+      nickel: {size:48,bg:'radial-gradient(circle at 35% 30%,#d0d0d0,#888)',   label:'5¢', border:'#999'},
+      penny:  {size:46,bg:'radial-gradient(circle at 35% 30%,#d4955a,#7a4018)',label:'1¢', border:'#9a5a28'},
+    };
+    let html = '<div class="coins-wrap">';
+    for (const {type, count} of coins) {
+      const c = C[type] || C.penny;
+      for (let i=0;i<count;i++) {
+        html += `<div class="coin" style="width:${c.size}px;height:${c.size}px;background:${c.bg};border:2px solid ${c.border};font-size:${c.size>48?13:11}px">${c.label}</div>`;
+      }
+    }
+    return html + '</div>';
+  }
+
+  window.addEventListener('load', init);
+</script>
+</body>
+</html>
